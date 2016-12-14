@@ -10,7 +10,7 @@ max_index = 16595
 embeddings = pickle.load(open('glove.pickle','rb'))
 LSTM_size = 20
 batch_size = 20
-epochs=5
+epochs=2
 class_weight = {0:0.1, 1:0.9}
 inputs = '_vuamc_shuffled.txt'
 targets = '_targets_shuffled.txt'
@@ -34,7 +34,7 @@ output_layer = TimeDistributed(Dense(1, activation='sigmoid'), name='output')(bi
 
 # define model and compile
 model = Model(input=input_layer, output=output_layer)
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])   #TODO would liket o add also precision and recall
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy','precision', 'recall'])   #TODO would liket o add also precision and recall
 
 
 ################################################
@@ -53,7 +53,7 @@ assert X_padded.shape == Y_padded.shape[0:2], "input and output shapes do not ma
 split = int(0.85*X_padded.shape[0])
 
 X_train, Y_train = X_padded[:split], Y_padded[:split]
-X_test, Y_test = X_padded[split:], Y_padded[split]
+X_test, Y_test = X_padded[split:], Y_padded[split:]
 
 
 ################################################
