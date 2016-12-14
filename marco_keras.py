@@ -9,9 +9,8 @@ input_length = 50
 max_index = 16595
 embeddings = pickle.load(open('glove.pickle','rb'))
 LSTM_size = 20
-batch_size = 20
-epochs=2
-class_weight = {0:0.1, 1:0.9}
+batch_size = 200
+epochs = 10
 inputs = '_vuamc_shuffled.txt'
 targets = '_targets_shuffled.txt'
 train_embeddings = False         # set to False to keep glove embeddings
@@ -34,7 +33,7 @@ output_layer = TimeDistributed(Dense(1, activation='sigmoid'), name='output')(bi
 
 # define model and compile
 model = Model(input=input_layer, output=output_layer)
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy','precision', 'recall'])   #TODO would liket o add also precision and recall
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy','precision', 'recall'], sample_weight_mode='temporal')
 
 
 ################################################
@@ -61,8 +60,15 @@ X_test, Y_test = X_padded[split:], Y_padded[split:]
 
 # TODO use sample weight to weight models
 print("Train model")
-model.fit(X_train, Y_train, validation_split=float(3.0/17), batch_size=batch_size, nb_epoch=epochs, verbose=1)
+sample_weight = Y_train.reshape(Y_train.shape[0:2])*0.94+0.03
+model.fit(X_train, Y_train, validation_split=float(3.0/17), batch_size=batch_size, nb_epoch=epochs, verbose=1, sample_weight=sample_weight)
 
 # TODO implement precision and recall in keras
 # TODO test if accuracy is correct for padding
-model.evaluate(X_test, Y_test)
+print('\n\n\n')
+metrics = model.metrics_names
+evaluation = model.evaluate(X_test, Y_test)
+
+print('\t'.join(['%s: %f' % metric_value for metric_value in zip(metrics, evaluation)]))
+
+
