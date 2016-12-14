@@ -3,17 +3,18 @@ from keras.layers.wrappers import Bidirectional, TimeDistributed
 from keras.models import Model
 import keras.preprocessing.sequence
 import numpy as np
+import pickle
 
 input_length = 50
-max_index = 20000
-# embeddings = filename        #TODO fetch glove embeddings from somewhere
+max_index = 16595
+embeddings = pickle.load(open('glove.pickle','rb'))
 LSTM_size = 20
 batch_size = 20
 epochs=5
 class_weight = {0:0.1, 1:0.9}
-training_inputs = '_vuamc_shuffled.txt'
-training_targets = '_targets_shuffled.txt'
-train_embeddings = True         # set to False to keep glove embeddings
+inputs = '_vuamc_shuffled.txt'
+targets = '_targets_shuffled.txt'
+train_embeddings = False         # set to False to keep glove embeddings
 
 
 ################################################
@@ -21,9 +22,8 @@ train_embeddings = True         # set to False to keep glove embeddings
 
 print("Generate model")
 
-# TODO change for glove embeddings
-# create embeddings matrix
-embedding_weights = np.random.normal(size=max_index*50).reshape(max_index, 50)
+# embedding_weights = np.random.normal(size=max_index*50).reshape(max_index, 50)
+embedding_weights = embeddings
 
 # define layers
 input_layer = Input(shape=(input_length,), name='input')
@@ -40,19 +40,20 @@ model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy']
 ################################################
 # DATA
 
-# read in training data from file
-print("Read training data")
-X_train = [[int(index) for index in line.split(',')] for line in open(training_inputs).readlines()]
-Y_train = [[[int(index)] for index in line.split(',')] for line in open(training_targets).readlines()]
+# read in data
+X = [[int(index) for index in line.split(',')] for line in open(inputs).readlines()]
+Y = [[[int(index)] for index in line.split(',')] for line in open(targets).readlines()]
 
-# Pad training data
-X_train_padded = keras.preprocessing.sequence.pad_sequences(X_train, dtype='int32', maxlen=input_length)
-Y_train_padded = keras.preprocessing.sequence.pad_sequences(Y_train, dtype='int32', maxlen=input_length)
+# pad data
+X_padded = keras.preprocessing.sequence.pad_sequences(X, dtype='int32', maxlen=input_length)
+Y_padded = keras.preprocessing.sequence.pad_sequences(Y, dtype='int32', maxlen=input_length)
 
-# Pad test data
-# X_test_padded = keras.preprocessing.sequence.pad_sequences(X_test, dtype='int32', maxlen=input_length)
-# Y_test_padded = keras.preprocessing.sequence.pad_sequences(Y_test, dtype='int32', maxlen=input_length)
+assert X_padded.shape == Y_padded.shape[0:2], "input and output shapes do not match, shape in = %s, shape out = %s" % (X_padded.shape, Y_padded.shape)
 
+split = int(0.85*X_padded.shape[0])
+
+X_train, Y_train = X_padded[:split], Y_padded[:split]
+X_test, Y_test = X_padded[split:], Y_padded[split]
 
 
 ################################################
@@ -60,9 +61,8 @@ Y_train_padded = keras.preprocessing.sequence.pad_sequences(Y_train, dtype='int3
 
 # TODO use sample weight to weight models
 print("Train model")
-model.fit(X_train_padded, Y_train_padded, batch_size=batch_size, nb_epoch=epochs, verbose=1)
+model.fit(X_train, Y_train, validation_split=float(3.0/17), batch_size=batch_size, nb_epoch=epochs, verbose=1)
 
-# TODO get test data
 # TODO implement precision and recall in keras
 # TODO test if accuracy is correct for padding
-# model.evaluate(X_test, Y_test)
+model.evaluate(X_test, Y_test)
