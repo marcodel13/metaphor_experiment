@@ -1,4 +1,4 @@
-from keras.layers import Embedding, Input, LSTM, Dense
+from keras.layers import Embedding, Input, LSTM, Dense, GRU
 from keras.layers.wrappers import Bidirectional, TimeDistributed
 from keras.models import Model
 import keras.preprocessing.sequence
@@ -8,13 +8,15 @@ import pickle
 input_length = 50
 max_index = 16595
 embeddings = pickle.load(open('glove.pickle','rb'))
-LSTM_size = 20
+hidden_size = 20
+hidden = LSTM
 batch_size = 200
 epochs = 50
 inputs = '_vuamc_shuffled.txt'
 targets = '_targets_shuffled.txt'
 train_embeddings = True         # set to False to keep glove embeddings
 class_weights = {0:0.03, 1:0.97}
+optimizer = 'adam'
 
 
 ################################################
@@ -28,13 +30,13 @@ embedding_weights = embeddings
 # define layers
 input_layer = Input(shape=(input_length,), name='input')
 embeddings = Embedding(input_dim=max_index, output_dim=50, input_length=input_length, weights=None, name='embeddings', trainable=train_embeddings, mask_zero=True)(input_layer)
-bi_LSTM = Bidirectional(LSTM(LSTM_size, return_sequences=True), name='RNN')(embeddings)
-output_layer = TimeDistributed(Dense(1, activation='sigmoid'), name='output')(bi_LSTM)
+bidirectional = Bidirectional(hidden(hidden_size, return_sequences=True), name='RNN')(embeddings)
+output_layer = TimeDistributed(Dense(1, activation='sigmoid'), name='output')(bidirectional)
 # output_layer = Dense(1, activation='sigmoid', name='output')(bi_LSTM)
 
 # define model and compile
 model = Model(input=input_layer, output=output_layer)
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy','precision', 'recall'], sample_weight_mode='temporal')
+model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy','precision', 'recall'], sample_weight_mode='temporal')
 
 
 ################################################
