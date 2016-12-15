@@ -10,10 +10,11 @@ max_index = 16595
 embeddings = pickle.load(open('glove.pickle','rb'))
 LSTM_size = 20
 batch_size = 200
-epochs = 10
+epochs = 50
 inputs = '_vuamc_shuffled.txt'
 targets = '_targets_shuffled.txt'
-train_embeddings = False         # set to False to keep glove embeddings
+train_embeddings = True         # set to False to keep glove embeddings
+class_weights = {0:0.03, 1:0.97}
 
 
 ################################################
@@ -58,13 +59,13 @@ X_test, Y_test = X_padded[split:], Y_padded[split:]
 ################################################
 # TRAIN AND TEST
 
-# TODO use sample weight to weight models
 print("Train model")
-sample_weight = Y_train.reshape(Y_train.shape[0:2])*0.94+0.03
+neg, pos = class_weights[1]-class_weights[0], class_weights[0]
+sample_weight = Y_train.reshape(Y_train.shape[0:2])*neg + pos
 model.fit(X_train, Y_train, validation_split=float(3.0/17), batch_size=batch_size, nb_epoch=epochs, verbose=1, sample_weight=sample_weight)
 
-# TODO implement precision and recall in keras
 # TODO test if accuracy is correct for padding
+# print test results
 print('\n\n\n')
 metrics = model.metrics_names
 evaluation = model.evaluate(X_test, Y_test)
