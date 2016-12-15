@@ -17,6 +17,7 @@ targets = '_targets_shuffled.txt'
 train_embeddings = True         # set to False to keep glove embeddings
 class_weights = {0:0.03, 1:0.97}
 optimizer = 'adam'
+# seed = 0
 
 
 ################################################
@@ -74,4 +75,7 @@ evaluation = model.evaluate(X_test, Y_test)
 
 print('\t'.join(['%s: %f' % metric_value for metric_value in zip(metrics, evaluation)]))
 
+# To print output on test:
+# predictions = model.predict(X_test)
+# print(predictions)
 
